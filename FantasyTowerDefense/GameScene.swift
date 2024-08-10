@@ -5,14 +5,18 @@ class GameScene: SKScene {
     
     let pathDuration: TimeInterval = 10.0
     let towerRange: CGFloat = 150.0  // Maximum range of the tower
-    let enemySpawnInterval: TimeInterval = 2.0  // Time interval between enemy spawns
     let enemyInitialHealth: Int = 3  // Initial health for each enemy
     let projectileDamage: Int = 1  // Damage each projectile does to the enemy
+    
+    var currentWave: Int = 0
+    var enemiesPerWave: Int = 5
+    var enemySpawnInterval: TimeInterval = 1.0  // Time interval between enemy spawns within a wave
+    var timeBetweenWaves: TimeInterval = 5.0  // Time interval between waves
     
     override func didMove(to view: SKView) {
         backgroundColor = SKColor.green
         createPath()
-        spawnEnemyLoop()
+        startNextWave()
         createTower()
     }
     
@@ -38,18 +42,32 @@ class GameScene: SKScene {
         addChild(shapeNode)
     }
     
-    func spawnEnemyLoop() {
-        let waitAction = SKAction.wait(forDuration: enemySpawnInterval)
-        let spawnAction = SKAction.run { [weak self] in
-            self?.createEnemy()
+    func startNextWave() {
+        currentWave += 1
+        let spawnEnemiesAction = SKAction.run { [weak self] in
+            self?.spawnEnemies(forWave: self?.currentWave ?? 1)
         }
-        let sequence = SKAction.sequence([waitAction, spawnAction])
-        let repeatAction = SKAction.repeatForever(sequence)
-        
-        run(repeatAction)
+        let delayAction = SKAction.wait(forDuration: timeBetweenWaves)
+        let sequence = SKAction.sequence([delayAction, spawnEnemiesAction])
+        run(sequence)
     }
     
-    func createEnemy() {
+    func spawnEnemies(forWave wave: Int) {
+        let totalEnemies = enemiesPerWave + (wave - 1) * 2  // Increase number of enemies with each wave
+        let healthMultiplier = wave  // Increase enemy health with each wave
+        let spawnAction = SKAction.run { [weak self] in
+            self?.createEnemy(withHealth: (self?.enemyInitialHealth ?? 3) * healthMultiplier)
+        }
+        let waitAction = SKAction.wait(forDuration: enemySpawnInterval)
+        let spawnSequence = SKAction.sequence([spawnAction, waitAction])
+        let repeatAction = SKAction.repeat(spawnSequence, count: totalEnemies)
+        
+        run(repeatAction, completion: { [weak self] in
+            self?.startNextWave()  // Start the next wave after all enemies have spawned
+        })
+    }
+    
+    func createEnemy(withHealth health: Int) {
         // Create a simple circular enemy
         let enemy = SKShapeNode(circleOfRadius: 20)
         enemy.fillColor = .blue
@@ -57,7 +75,7 @@ class GameScene: SKScene {
         
         // Initialize and safely set health using userData
         enemy.userData = NSMutableDictionary()
-        enemy.userData?["health"] = enemyInitialHealth
+        enemy.userData?["health"] = health
         
         // Position the enemy at the start of the path
         if let pathNode = childNode(withName: "path") as? SKShapeNode,
