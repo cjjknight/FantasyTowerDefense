@@ -15,6 +15,7 @@
 		8B8C07242C67CD1600180B62 /* FantasyTowerDefenseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8C07232C67CD1600180B62 /* FantasyTowerDefenseTests.swift */; };
 		8B8C072E2C67CD1600180B62 /* FantasyTowerDefenseUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8C072D2C67CD1600180B62 /* FantasyTowerDefenseUITests.swift */; };
 		8B8C07302C67CD1600180B62 /* FantasyTowerDefenseUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8C072F2C67CD1600180B62 /* FantasyTowerDefenseUITestsLaunchTests.swift */; };
+		8B8C073D2C67CD5600180B62 /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8C073C2C67CD5600180B62 /* GameScene.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,6 +48,7 @@
 		8B8C07292C67CD1600180B62 /* FantasyTowerDefenseUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FantasyTowerDefenseUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8B8C072D2C67CD1600180B62 /* FantasyTowerDefenseUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FantasyTowerDefenseUITests.swift; sourceTree = "<group>"; };
 		8B8C072F2C67CD1600180B62 /* FantasyTowerDefenseUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FantasyTowerDefenseUITestsLaunchTests.swift; sourceTree = "<group>"; };
+		8B8C073C2C67CD5600180B62 /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +101,7 @@
 			children = (
 				8B8C070F2C67CD1300180B62 /* FantasyTowerDefenseApp.swift */,
 				8B8C07112C67CD1300180B62 /* ContentView.swift */,
+				8B8C073C2C67CD5600180B62 /* GameScene.swift */,
 				8B8C07132C67CD1300180B62 /* Item.swift */,
 				8B8C07152C67CD1600180B62 /* Assets.xcassets */,
 				8B8C07172C67CD1600180B62 /* FantasyTowerDefense.entitlements */,
@@ -264,6 +267,7 @@
 			files = (
 				8B8C07122C67CD1300180B62 /* ContentView.swift in Sources */,
 				8B8C07142C67CD1300180B62 /* Item.swift in Sources */,
+				8B8C073D2C67CD5600180B62 /* GameScene.swift in Sources */,
 				8B8C07102C67CD1300180B62 /* FantasyTowerDefenseApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
