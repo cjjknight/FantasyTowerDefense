@@ -59,8 +59,10 @@ class GameScene: SKScene {
         waveLabel.zPosition = 10
         addChild(waveLabel)
         
-        // Go button in the bottom right corner
-        goButton = SKSpriteNode(imageNamed: "go_icon") // Replace with your own Go button icon
+        // Next wave button using SF Symbol in the bottom right corner
+        let nextWaveImage = UIImage(systemName: "arrowtriangle.right.circle.fill")!.withTintColor(.white, renderingMode: .alwaysOriginal)
+        let goButtonTexture = SKTexture(image: nextWaveImage)
+        goButton = SKSpriteNode(texture: goButtonTexture)
         goButton.position = CGPoint(x: self.size.width - 60, y: 40)
         goButton.zPosition = 10
         goButton.name = "goButton"
@@ -77,8 +79,8 @@ class GameScene: SKScene {
         
         // Restart button using SF Symbol in the top left corner
         let restartImage = UIImage(systemName: "arrow.clockwise.circle.fill")!.withTintColor(.white, renderingMode: .alwaysOriginal)
-        let texture = SKTexture(image: restartImage)
-        restartButton = SKSpriteNode(texture: texture)
+        let restartButtonTexture = SKTexture(image: restartImage)
+        restartButton = SKSpriteNode(texture: restartButtonTexture)
         restartButton.position = CGPoint(x: 40, y: self.size.height - 40)
         restartButton.zPosition = 10
         restartButton.name = "restartButton"
