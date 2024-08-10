@@ -114,20 +114,33 @@ class GameScene: SKScene {
         let projectile = SKShapeNode(circleOfRadius: 10)
         projectile.fillColor = .gray
         projectile.position = tower.position
+        projectile.name = "projectile"
         
         addChild(projectile)
         
-        // Move towards the target dynamically
-        let moveAction = SKAction.move(to: target.position, duration: 1.0)
-        let checkTargetExistsAction = SKAction.run { [weak self, weak projectile] in
-            if target.parent == nil {
-                projectile?.removeFromParent()
+        // Move towards the target dynamically and faster
+        let moveAction = SKAction.customAction(withDuration: 0.5) { [weak self] node, elapsedTime in
+            guard let self = self else { return }
+            if target.parent != nil {
+                let dx = target.position.x - node.position.x
+                let dy = target.position.y - node.position.y
+                let angle = atan2(dy, dx)
+                let velocity: CGFloat = 500.0 // Speed of the projectile
+                let vx = cos(angle) * velocity * CGFloat(elapsedTime)
+                let vy = sin(angle) * velocity * CGFloat(elapsedTime)
+                node.position = CGPoint(x: node.position.x + vx, y: node.position.y + vy)
+                
+                // Check for collision
+                if node.frame.intersects(target.frame) {
+                    target.removeFromParent()
+                    node.removeFromParent()
+                }
+            } else {
+                node.removeFromParent()
             }
         }
-        let removeAction = SKAction.removeFromParent()
-        let sequence = SKAction.sequence([moveAction, checkTargetExistsAction, removeAction])
         
-        projectile.run(sequence)
+        projectile.run(SKAction.repeatForever(moveAction))
     }
     
     override func update(_ currentTime: TimeInterval) {
