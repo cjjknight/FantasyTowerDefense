@@ -8,16 +8,20 @@ class GameScene: SKScene {
     let enemyInitialHealth: Int = 3  // Initial health for each enemy
     let projectileDamage: Int = 1  // Damage each projectile does to the enemy
     
+    var currentLevel: Int = 1
     var currentWave: Int = 0
     var enemiesPerWave: Int = 5
     var enemySpawnInterval: TimeInterval = 1.0  // Time interval between enemy spawns within a wave
     var timeBetweenWaves: TimeInterval = 5.0  // Time interval between waves
     
+    var goButton: SKSpriteNode!
+
     override func didMove(to view: SKView) {
         backgroundColor = SKColor.green
         createPath()
-        startNextWave()
         createTower()
+        setupGoButton()
+        showGoButton()
     }
     
     func createPath() {
@@ -42,19 +46,36 @@ class GameScene: SKScene {
         addChild(shapeNode)
     }
     
+    func setupGoButton() {
+        goButton = SKSpriteNode(imageNamed: "go_icon") // Replace with your own Go button icon
+        goButton.position = CGPoint(x: self.size.width / 2, y: self.size.height / 2)
+        goButton.zPosition = 10
+        goButton.name = "goButton"
+        addChild(goButton)
+    }
+    
+    func showGoButton() {
+        goButton.isHidden = false
+    }
+    
+    func hideGoButton() {
+        goButton.isHidden = true
+    }
+    
     func startNextWave() {
+        hideGoButton()
         currentWave += 1
         let spawnEnemiesAction = SKAction.run { [weak self] in
             self?.spawnEnemies(forWave: self?.currentWave ?? 1)
         }
         let delayAction = SKAction.wait(forDuration: timeBetweenWaves)
-        let sequence = SKAction.sequence([delayAction, spawnEnemiesAction])
+        let sequence = SKAction.sequence([spawnEnemiesAction, delayAction])
         run(sequence)
     }
     
     func spawnEnemies(forWave wave: Int) {
         let totalEnemies = enemiesPerWave + (wave - 1) * 2  // Increase number of enemies with each wave
-        let healthMultiplier = wave  // Increase enemy health with each wave
+        let healthMultiplier = wave + currentLevel - 1  // Increase enemy health with each level and wave
         let spawnAction = SKAction.run { [weak self] in
             self?.createEnemy(withHealth: (self?.enemyInitialHealth ?? 3) * healthMultiplier)
         }
@@ -63,8 +84,30 @@ class GameScene: SKScene {
         let repeatAction = SKAction.repeat(spawnSequence, count: totalEnemies)
         
         run(repeatAction, completion: { [weak self] in
-            self?.startNextWave()  // Start the next wave after all enemies have spawned
+            self?.waveCompleted()
         })
+    }
+    
+    func waveCompleted() {
+        if currentWave >= 3 {
+            levelCompleted()
+        } else {
+            showGoButton()
+        }
+    }
+    
+    func levelCompleted() {
+        currentLevel += 1
+        currentWave = 0
+        
+        if currentLevel > 3 {
+            print("Game Completed!")
+            // Show game completed message or transition to a new scene
+        } else {
+            print("Level \(currentLevel) Completed!")
+            // Show level completed message
+            showGoButton()
+        }
     }
     
     func createEnemy(withHealth health: Int) {
@@ -175,6 +218,20 @@ class GameScene: SKScene {
                 enemy.removeFromParent()
             } else {
                 enemy.userData?["health"] = health
+            }
+        }
+    }
+    
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        // Detect touch on the Go button
+        if let touch = touches.first {
+            let location = touch.location(in: self)
+            let touchedNodes = nodes(at: location)
+            
+            for node in touchedNodes {
+                if node.name == "goButton" {
+                    startNextWave()
+                }
             }
         }
     }
