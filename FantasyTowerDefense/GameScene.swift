@@ -75,8 +75,10 @@ class GameScene: SKScene {
         enemyCounterLabel.zPosition = 10
         addChild(enemyCounterLabel)
         
-        // Restart button in the top left corner
-        restartButton = SKSpriteNode(imageNamed: "restart_icon") // Replace with your own restart button icon
+        // Restart button using SF Symbol in the top left corner
+        let restartImage = UIImage(systemName: "arrow.clockwise.circle.fill")!.withTintColor(.white, renderingMode: .alwaysOriginal)
+        let texture = SKTexture(image: restartImage)
+        restartButton = SKSpriteNode(texture: texture)
         restartButton.position = CGPoint(x: 40, y: self.size.height - 40)
         restartButton.zPosition = 10
         restartButton.name = "restartButton"
