@@ -300,15 +300,38 @@ class GameScene: SKScene {
     }
     
     func restartGame() {
+        // Stop all actions on the scene to prevent ongoing enemy movements
+        self.removeAllActions()
+        
+        // Remove all enemies and projectiles from the scene
+        self.enumerateChildNodes(withName: "enemy") { node, _ in
+            node.removeAllActions()
+            node.removeFromParent()
+        }
+        
+        self.enumerateChildNodes(withName: "projectile") { node, _ in
+            node.removeAllActions()
+            node.removeFromParent()
+        }
+        
+        // Reset game state variables
         currentLevel = 1
         currentWave = 0
         enemiesCrossed = 0
+        
+        // Remove all children (UI elements will be recreated below)
         removeAllChildren()
+        
+        // Re-setup the UI, path, and tower zones
         setupUI()
         createPath()
         setupTowerZones()
+        
+        // Update the UI labels to reflect the reset state
         updateWaveLabel()
         updateEnemyCounter()
+        
+        // Show the Go button to allow the player to start the first wave again
         showGoButton()
     }
     
