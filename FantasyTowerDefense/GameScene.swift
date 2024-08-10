@@ -15,11 +15,12 @@ class GameScene: SKScene {
     var timeBetweenWaves: TimeInterval = 5.0  // Time interval between waves
     
     var goButton: SKSpriteNode!
+    var isPlacingTowers: Bool = true // Control tower placement phase
 
     override func didMove(to view: SKView) {
         backgroundColor = SKColor.green
         createPath()
-        createTower()
+        setupTowerZones()
         setupGoButton()
         showGoButton()
     }
@@ -46,6 +47,24 @@ class GameScene: SKScene {
         addChild(shapeNode)
     }
     
+    func setupTowerZones() {
+        // Define zones where towers can be placed
+        let zones = [
+            CGPoint(x: self.size.width * 0.2, y: self.size.height * 0.6),
+            CGPoint(x: self.size.width * 0.5, y: self.size.height * 0.3),
+            CGPoint(x: self.size.width * 0.8, y: self.size.height * 0.7)
+        ]
+        
+        for zone in zones {
+            let zoneNode = SKShapeNode(circleOfRadius: 30)
+            zoneNode.fillColor = .gray
+            zoneNode.position = zone
+            zoneNode.name = "towerZone"
+            zoneNode.zPosition = 5
+            addChild(zoneNode)
+        }
+    }
+    
     func setupGoButton() {
         goButton = SKSpriteNode(imageNamed: "go_icon") // Replace with your own Go button icon
         goButton.position = CGPoint(x: self.size.width / 2, y: self.size.height / 2)
@@ -56,10 +75,12 @@ class GameScene: SKScene {
     
     func showGoButton() {
         goButton.isHidden = false
+        isPlacingTowers = true // Allow tower placement
     }
     
     func hideGoButton() {
         goButton.isHidden = true
+        isPlacingTowers = false // Disable tower placement
     }
     
     func startNextWave() {
@@ -137,11 +158,10 @@ class GameScene: SKScene {
         }
     }
     
-    func createTower() {
-        // Ensure tower is placed away from the path
+    func createTower(at position: CGPoint) {
         let tower = SKShapeNode(rectOf: CGSize(width: 40, height: 40))
         tower.fillColor = .brown
-        tower.position = CGPoint(x: self.size.width * 0.5, y: self.size.height * 0.25) // Position the tower away from the path
+        tower.position = position
         tower.name = "tower"
         
         addChild(tower)
@@ -223,14 +243,24 @@ class GameScene: SKScene {
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        // Detect touch on the Go button
         if let touch = touches.first {
             let location = touch.location(in: self)
             let touchedNodes = nodes(at: location)
             
+            // Handle only one touch at a time to avoid conflicts
+            guard touchedNodes.count > 0 else { return }
+
             for node in touchedNodes {
-                if node.name == "goButton" {
+                if node.name == "goButton" && isPlacingTowers {
                     startNextWave()
+                    break
+                } else if node.name == "towerZone" && isPlacingTowers {
+                    // Ensure only one tower is placed per zone
+                    if node.children.isEmpty {
+                        createTower(at: node.position)
+                        node.removeFromParent() // Remove zone after placing tower
+                    }
+                    break
                 }
             }
         }
