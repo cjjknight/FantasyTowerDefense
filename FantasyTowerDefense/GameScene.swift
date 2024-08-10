@@ -3,31 +3,48 @@ import SwiftUI
 
 class GameScene: SKScene {
     
-    let startPosition = CGPoint(x: 100, y: 100)
-    let pathDuration: TimeInterval = 5.0
+    let pathDuration: TimeInterval = 10.0
     let towerRange: CGFloat = 150.0  // Maximum range of the tower
+    let enemySpawnInterval: TimeInterval = 2.0  // Time interval between enemy spawns
     
     override func didMove(to view: SKView) {
         backgroundColor = SKColor.green
         createPath()
+        spawnEnemyLoop()
         createTower()
-        createEnemy()
     }
     
     func createPath() {
-        // Create a simple path for enemies to follow
+        // Create a path that starts from the left side of the screen and ends on the right side
         let path = UIBezierPath()
-        path.move(to: startPosition)
-        path.addLine(to: CGPoint(x: 300, y: 100))
-        path.addLine(to: CGPoint(x: 300, y: 300))
-        path.addLine(to: CGPoint(x: 100, y: 300))
-        path.close()
+        let screenWidth = self.size.width
+        let screenHeight = self.size.height
+        
+        // Define safe margins to avoid going off-screen
+        let margin: CGFloat = 20.0
+        
+        path.move(to: CGPoint(x: margin, y: screenHeight / 2))
+        path.addLine(to: CGPoint(x: screenWidth * 0.25, y: screenHeight * 0.75 - margin))
+        path.addLine(to: CGPoint(x: screenWidth * 0.5, y: screenHeight * 0.25 + margin))
+        path.addLine(to: CGPoint(x: screenWidth * 0.75, y: screenHeight * 0.75 - margin))
+        path.addLine(to: CGPoint(x: screenWidth - margin, y: screenHeight / 2))
         
         let shapeNode = SKShapeNode(path: path.cgPath)
         shapeNode.strokeColor = .red
         shapeNode.lineWidth = 5
         shapeNode.name = "path"  // Name the path so it can be referenced
         addChild(shapeNode)
+    }
+    
+    func spawnEnemyLoop() {
+        let waitAction = SKAction.wait(forDuration: enemySpawnInterval)
+        let spawnAction = SKAction.run { [weak self] in
+            self?.createEnemy()
+        }
+        let sequence = SKAction.sequence([waitAction, spawnAction])
+        let repeatAction = SKAction.repeatForever(sequence)
+        
+        run(repeatAction)
     }
     
     func createEnemy() {
@@ -39,7 +56,7 @@ class GameScene: SKScene {
         // Position the enemy at the start of the path
         if let pathNode = childNode(withName: "path") as? SKShapeNode,
            let path = pathNode.path {
-            enemy.position = startPosition
+            enemy.position = CGPoint(x: 20, y: self.size.height / 2) // Start slightly within the left side of the screen
             addChild(enemy)
             
             // Define the movement along the path
@@ -54,10 +71,10 @@ class GameScene: SKScene {
     }
     
     func createTower() {
-        // Create a simple square tower
+        // Ensure tower is placed away from the path
         let tower = SKShapeNode(rectOf: CGSize(width: 40, height: 40))
         tower.fillColor = .brown
-        tower.position = CGPoint(x: 200, y: 200) // Position the tower in the middle of the path
+        tower.position = CGPoint(x: self.size.width * 0.5, y: self.size.height * 0.25) // Position the tower away from the path
         tower.name = "tower"
         
         addChild(tower)
@@ -65,7 +82,7 @@ class GameScene: SKScene {
         // Shoot at the enemy if within range
         let shootAction = SKAction.run { [weak self] in
             guard let self = self else { return }
-            if let enemy = self.childNode(withName: "enemy") {
+            if let enemy = self.closestEnemy(to: tower) {
                 let distance = hypot(enemy.position.x - tower.position.x, enemy.position.y - tower.position.y)
                 if distance <= self.towerRange {
                     self.shootProjectile(from: tower, to: enemy)
@@ -76,6 +93,21 @@ class GameScene: SKScene {
         let repeatAction = SKAction.repeatForever(SKAction.sequence([shootAction, waitAction]))
         
         tower.run(repeatAction)
+    }
+    
+    func closestEnemy(to tower: SKNode) -> SKNode? {
+        var closestEnemy: SKNode?
+        var shortestDistance: CGFloat = towerRange
+        
+        self.enumerateChildNodes(withName: "enemy") { node, _ in
+            let distance = hypot(node.position.x - tower.position.x, node.position.y - tower.position.y)
+            if distance < shortestDistance {
+                shortestDistance = distance
+                closestEnemy = node
+            }
+        }
+        
+        return closestEnemy
     }
     
     func shootProjectile(from tower: SKShapeNode, to target: SKNode) {
