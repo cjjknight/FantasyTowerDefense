@@ -6,6 +6,8 @@ class GameScene: SKScene {
     let pathDuration: TimeInterval = 10.0
     let towerRange: CGFloat = 150.0  // Maximum range of the tower
     let enemySpawnInterval: TimeInterval = 2.0  // Time interval between enemy spawns
+    let enemyInitialHealth: Int = 3  // Initial health for each enemy
+    let projectileDamage: Int = 1  // Damage each projectile does to the enemy
     
     override func didMove(to view: SKView) {
         backgroundColor = SKColor.green
@@ -52,6 +54,10 @@ class GameScene: SKScene {
         let enemy = SKShapeNode(circleOfRadius: 20)
         enemy.fillColor = .blue
         enemy.name = "enemy"
+        
+        // Initialize and safely set health using userData
+        enemy.userData = NSMutableDictionary()
+        enemy.userData?["health"] = enemyInitialHealth
         
         // Position the enemy at the start of the path
         if let pathNode = childNode(withName: "path") as? SKShapeNode,
@@ -132,15 +138,27 @@ class GameScene: SKScene {
                 
                 // Check for collision
                 if node.frame.intersects(target.frame) {
-                    target.removeFromParent()
-                    node.removeFromParent()
+                    self.applyDamage(to: target, damage: self.projectileDamage)
+                    node.removeFromParent()  // Ensure the projectile is removed after the hit
                 }
             } else {
-                node.removeFromParent()
+                node.removeFromParent()  // Remove projectile if the target is gone
             }
         }
         
         projectile.run(SKAction.repeatForever(moveAction))
+    }
+    
+    func applyDamage(to enemy: SKNode, damage: Int) {
+        // Safely access and modify the enemy's health
+        if var health = enemy.userData?["health"] as? Int {
+            health -= damage
+            if health <= 0 {
+                enemy.removeFromParent()
+            } else {
+                enemy.userData?["health"] = health
+            }
+        }
     }
     
     override func update(_ currentTime: TimeInterval) {
