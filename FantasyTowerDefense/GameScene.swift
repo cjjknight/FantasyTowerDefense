@@ -13,25 +13,27 @@ class GameScene: SKScene {
     var enemiesPerWave: Int = 5
     var enemySpawnInterval: TimeInterval = 1.0  // Time interval between enemy spawns within a wave
     var timeBetweenWaves: TimeInterval = 5.0  // Time interval between waves
+    var enemiesCrossed: Int = 0  // Counter for enemies that successfully cross the screen
     
+    var waveLabel: SKLabelNode!
     var goButton: SKSpriteNode!
+    var enemyCounterLabel: SKLabelNode!
+    var restartButton: SKSpriteNode!
     var isPlacingTowers: Bool = true // Control tower placement phase
 
     override func didMove(to view: SKView) {
         backgroundColor = SKColor.green
+        setupUI()
         createPath()
         setupTowerZones()
-        setupGoButton()
         showGoButton()
     }
     
     func createPath() {
-        // Create a path that starts from the left side of the screen and ends on the right side
         let path = UIBezierPath()
         let screenWidth = self.size.width
         let screenHeight = self.size.height
         
-        // Define safe margins to avoid going off-screen
         let margin: CGFloat = 20.0
         
         path.move(to: CGPoint(x: margin, y: screenHeight / 2))
@@ -43,8 +45,42 @@ class GameScene: SKScene {
         let shapeNode = SKShapeNode(path: path.cgPath)
         shapeNode.strokeColor = .red
         shapeNode.lineWidth = 5
-        shapeNode.name = "path"  // Name the path so it can be referenced
+        shapeNode.name = "path"
         addChild(shapeNode)
+    }
+    
+    func setupUI() {
+        // Wave number label in the bottom left corner
+        waveLabel = SKLabelNode(text: "Wave: 1")
+        waveLabel.fontSize = 24
+        waveLabel.fontColor = .white
+        waveLabel.horizontalAlignmentMode = .left
+        waveLabel.position = CGPoint(x: 20, y: 20)
+        waveLabel.zPosition = 10
+        addChild(waveLabel)
+        
+        // Go button in the bottom right corner
+        goButton = SKSpriteNode(imageNamed: "go_icon") // Replace with your own Go button icon
+        goButton.position = CGPoint(x: self.size.width - 60, y: 40)
+        goButton.zPosition = 10
+        goButton.name = "goButton"
+        addChild(goButton)
+        
+        // Enemy counter in the top right corner
+        enemyCounterLabel = SKLabelNode(text: "Enemies: 0")
+        enemyCounterLabel.fontSize = 24
+        enemyCounterLabel.fontColor = .white
+        enemyCounterLabel.horizontalAlignmentMode = .right
+        enemyCounterLabel.position = CGPoint(x: self.size.width - 20, y: self.size.height - 40)
+        enemyCounterLabel.zPosition = 10
+        addChild(enemyCounterLabel)
+        
+        // Restart button in the top left corner
+        restartButton = SKSpriteNode(imageNamed: "restart_icon") // Replace with your own restart button icon
+        restartButton.position = CGPoint(x: 40, y: self.size.height - 40)
+        restartButton.zPosition = 10
+        restartButton.name = "restartButton"
+        addChild(restartButton)
     }
     
     func setupTowerZones() {
@@ -65,12 +101,12 @@ class GameScene: SKScene {
         }
     }
     
-    func setupGoButton() {
-        goButton = SKSpriteNode(imageNamed: "go_icon") // Replace with your own Go button icon
-        goButton.position = CGPoint(x: self.size.width / 2, y: self.size.height / 2)
-        goButton.zPosition = 10
-        goButton.name = "goButton"
-        addChild(goButton)
+    func updateWaveLabel() {
+        waveLabel.text = "Wave: \(currentWave)"
+    }
+    
+    func updateEnemyCounter() {
+        enemyCounterLabel.text = "Enemies: \(enemiesCrossed)"
     }
     
     func showGoButton() {
@@ -86,6 +122,7 @@ class GameScene: SKScene {
     func startNextWave() {
         hideGoButton()
         currentWave += 1
+        updateWaveLabel()
         let spawnEnemiesAction = SKAction.run { [weak self] in
             self?.spawnEnemies(forWave: self?.currentWave ?? 1)
         }
@@ -126,36 +163,38 @@ class GameScene: SKScene {
             // Show game completed message or transition to a new scene
         } else {
             print("Level \(currentLevel) Completed!")
-            // Show level completed message
             showGoButton()
         }
     }
     
     func createEnemy(withHealth health: Int) {
-        // Create a simple circular enemy
         let enemy = SKShapeNode(circleOfRadius: 20)
         enemy.fillColor = .blue
         enemy.name = "enemy"
         
-        // Initialize and safely set health using userData
         enemy.userData = NSMutableDictionary()
         enemy.userData?["health"] = health
         
-        // Position the enemy at the start of the path
         if let pathNode = childNode(withName: "path") as? SKShapeNode,
            let path = pathNode.path {
-            enemy.position = CGPoint(x: 20, y: self.size.height / 2) // Start slightly within the left side of the screen
+            enemy.position = CGPoint(x: 20, y: self.size.height / 2)
             addChild(enemy)
             
-            // Define the movement along the path
             let moveAction = SKAction.follow(path, asOffset: false, orientToPath: false, duration: pathDuration)
             let removeAction = SKAction.removeFromParent()
-            let sequence = SKAction.sequence([moveAction, removeAction])
+            let sequence = SKAction.sequence([moveAction, SKAction.run { [weak self] in
+                self?.enemyCrossed()
+            }, removeAction])
             
             enemy.run(sequence)
         } else {
             print("Error: Path not found or invalid.")
         }
+    }
+    
+    func enemyCrossed() {
+        enemiesCrossed += 1
+        updateEnemyCounter()
     }
     
     func createTower(at position: CGPoint) {
@@ -166,7 +205,6 @@ class GameScene: SKScene {
         
         addChild(tower)
         
-        // Shoot at the enemy if within range
         let shootAction = SKAction.run { [weak self] in
             guard let self = self else { return }
             if let enemy = self.closestEnemy(to: tower) {
@@ -205,25 +243,23 @@ class GameScene: SKScene {
         
         addChild(projectile)
         
-        // Move towards the target dynamically and faster
         let moveAction = SKAction.customAction(withDuration: 0.5) { [weak self] node, elapsedTime in
             guard let self = self else { return }
             if target.parent != nil {
                 let dx = target.position.x - node.position.x
                 let dy = target.position.y - node.position.y
                 let angle = atan2(dy, dx)
-                let velocity: CGFloat = 500.0 // Speed of the projectile
+                let velocity: CGFloat = 500.0
                 let vx = cos(angle) * velocity * CGFloat(elapsedTime)
                 let vy = sin(angle) * velocity * CGFloat(elapsedTime)
                 node.position = CGPoint(x: node.position.x + vx, y: node.position.y + vy)
                 
-                // Check for collision
                 if node.frame.intersects(target.frame) {
                     self.applyDamage(to: target, damage: self.projectileDamage)
-                    node.removeFromParent()  // Ensure the projectile is removed after the hit
+                    node.removeFromParent()
                 }
             } else {
-                node.removeFromParent()  // Remove projectile if the target is gone
+                node.removeFromParent()
             }
         }
         
@@ -231,7 +267,6 @@ class GameScene: SKScene {
     }
     
     func applyDamage(to enemy: SKNode, damage: Int) {
-        // Safely access and modify the enemy's health
         if var health = enemy.userData?["health"] as? Int {
             health -= damage
             if health <= 0 {
@@ -247,29 +282,35 @@ class GameScene: SKScene {
             let location = touch.location(in: self)
             let touchedNodes = nodes(at: location)
             
-            // Handle only one touch at a time to avoid conflicts
-            guard touchedNodes.count > 0 else { return }
+            guard let node = touchedNodes.first else { return }
 
-            for node in touchedNodes {
-                if node.name == "goButton" && isPlacingTowers {
-                    startNextWave()
-                    break
-                } else if node.name == "towerZone" && isPlacingTowers {
-                    // Ensure only one tower is placed per zone
-                    if node.children.isEmpty {
-                        createTower(at: node.position)
-                        node.removeFromParent() // Remove zone after placing tower
-                    }
-                    break
+            if node.name == "goButton" && isPlacingTowers {
+                startNextWave()
+            } else if node.name == "towerZone" && isPlacingTowers {
+                if node.children.isEmpty {
+                    createTower(at: node.position)
+                    node.removeFromParent()
                 }
+            } else if node.name == "restartButton" {
+                restartGame()
             }
         }
     }
     
+    func restartGame() {
+        currentLevel = 1
+        currentWave = 0
+        enemiesCrossed = 0
+        removeAllChildren()
+        setupUI()
+        createPath()
+        setupTowerZones()
+        updateWaveLabel()
+        updateEnemyCounter()
+        showGoButton()
+    }
+    
     override func update(_ currentTime: TimeInterval) {
         super.update(currentTime)
-        
-        // Optionally, you can add logic here to remove enemies that reach the end of the path
-        // or handle game state updates.
     }
 }
